@@ -198,11 +198,14 @@ function updateAsideValues(
   const finalAmount = totalDiscountedPrice;
   const discountSum = totalDiscountAmount;
   const targetAmount = 40000;
-  const shortage = targetAmount - finalAmount;
+  const shortage = Math.max(targetAmount - finalAmount, 0);
 
   const asideContainers = document.querySelectorAll(".mobile-aside, .pc-aside");
 
-  asideContainers.forEach(function (container) {
+  asideContainers.forEach((container, index) => {
+    const isShortage = shortage >= 0;
+
+    // HTML 구조 업데이트
     container.innerHTML = `
       <div class="checkout__summary">
         <div class="summary__item">
@@ -215,11 +218,7 @@ function updateAsideValues(
               <span>상품할인금액</span>
               <span class="discount">- ￦${discountSum.toLocaleString()}</span>
             </li>
-            <li class="additional__info" id="additional__info" ${
-              shortage > 0
-                ? 'style="display: block;"'
-                : 'style="display: none;"'
-            }>
+            <li class="additional__info ${isShortage ? "visible" : "hidden"}">
               ￦${shortage.toLocaleString()} 추가주문 시, 구매가능
             </li>
           </ul>
@@ -238,10 +237,12 @@ function updateAsideValues(
           </ul>
         </div>
         <button type="submit" class="checkout__button ${
-          shortage > 0 ? "disabled" : "enabled"
-        }" id="checkout__button" ${
-      shortage > 0 ? "disabled" : ""
-    }>결제하기</button>
+          isShortage ? "disabled" : "enabled"
+        }" 
+                id="checkout__button-${index}" 
+                ${isShortage ? "disabled" : ""}>
+          결제하기
+        </button>
         <div class="info">
           <ul>
             <li class="info__text">
@@ -260,12 +261,17 @@ function updateAsideValues(
         </div>
       </div>
     `;
-    const checkoutButton = container.querySelector("#checkout__button");
+
+    // 버튼 이벤트 리스너 추가
+    const checkoutButton = container.querySelector(
+      `#checkout__button-${index}`
+    );
     if (checkoutButton) {
-      checkoutButton.style.cursor = shortage > 0 ? "not-allowed" : "pointer";
-      checkoutButton.addEventListener("click", function () {
+      checkoutButton.addEventListener("click", () => {
         if (shortage <= 0) {
           window.location.href = "/html/components/Payment.html";
+        } else {
+          alert("결제 금액이 부족합니다.");
         }
       });
     }

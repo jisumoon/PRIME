@@ -964,7 +964,6 @@ function setupCheckboxListeners() {
   ); // #agreeAll 제외
   const radioButtons = document.querySelectorAll('input[name="radio"]');
   const checkoutButton = document.querySelector(".checkout__button");
-  const treePlanting = document.querySelector("#treePlanting"); //  체크박스
 
   // 체크박스 및 라디오 버튼 상태에 따라 결제 버튼 활성화
   function toggleCheckoutButton() {
@@ -974,8 +973,15 @@ function setupCheckboxListeners() {
     const radioChecked = Array.from(radioButtons).some(
       (radio) => radio.checked
     );
+    const defaultAddressExists =
+      localStorage.getItem("defaultAddress") !== null;
 
-    checkoutButton.disabled = !(allCheckboxChecked && radioChecked);
+    // 모든 조건 충족 시 버튼 활성화
+    checkoutButton.disabled = !(
+      allCheckboxChecked &&
+      radioChecked &&
+      defaultAddressExists
+    );
   }
 
   // 전체 동의 버튼 이벤트
@@ -1010,6 +1016,34 @@ function setupCheckboxListeners() {
 
   // 결제 버튼 클릭 이벤트
   checkoutButton.addEventListener("click", function () {
+    const allCheckboxChecked = Array.from(checkboxes).every(
+      (checkbox) => checkbox.checked
+    );
+    const radioChecked = Array.from(radioButtons).some(
+      (radio) => radio.checked
+    );
+    const defaultAddressExists =
+      localStorage.getItem("defaultAddress") !== null;
+
+    // 3가지 조건을 모두 만족하지 않을 경우 경고창(alert) 표시
+    if (!allCheckboxChecked || !radioChecked || !defaultAddressExists) {
+      let errorMessage = "다음 조건을 확인하세요:\n";
+
+      if (!allCheckboxChecked) {
+        errorMessage += "- 모든 필수 체크박스를 선택해야 합니다.\n";
+      }
+      if (!radioChecked) {
+        errorMessage += "- 하나 이상의 라디오 버튼을 선택해야 합니다.\n";
+      }
+      if (!defaultAddressExists) {
+        errorMessage += "- 기본 주소를 설정해야 합니다.\n";
+      }
+
+      alert(errorMessage);
+      return; // 결제 버튼 동작 중단
+    }
+
+    // 모든 조건을 만족하면 결제 페이지로 이동
     if (!checkoutButton.disabled) {
       window.location.href = "/html/components/Ordercompleted.html";
     }
