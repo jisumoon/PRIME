@@ -198,12 +198,12 @@ function updateAsideValues(
   const finalAmount = totalDiscountedPrice;
   const discountSum = totalDiscountAmount;
   const targetAmount = 40000;
-  const shortage = Math.max(targetAmount - finalAmount, 0);
+  const shortage = targetAmount - finalAmount;
 
   const asideContainers = document.querySelectorAll(".mobile-aside, .pc-aside");
 
   asideContainers.forEach((container, index) => {
-    const isShortage = shortage >= 0;
+    const isShortage = shortage > 0;
 
     // HTML 구조 업데이트
     container.innerHTML = `
@@ -218,7 +218,9 @@ function updateAsideValues(
               <span>상품할인금액</span>
               <span class="discount">- ￦${discountSum.toLocaleString()}</span>
             </li>
-            <li class="additional__info ${isShortage ? "visible" : "hidden"}">
+             <li class="additional__info" id="additional__info-${index}" style="display: ${
+      isShortage ? "block" : "none"
+    };">
               ￦${shortage.toLocaleString()} 추가주문 시, 구매가능
             </li>
           </ul>
