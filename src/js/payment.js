@@ -250,7 +250,6 @@ siSelect.addEventListener("change", function () {
 });
 
 // 주소 추가 및 수정
-// 주소 추가 및 수정
 form.addEventListener("submit", function (e) {
   e.preventDefault();
 
