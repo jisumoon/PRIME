@@ -368,11 +368,6 @@ userInfo.addEventListener("click", function (e) {
       10
     );
 
-    if (isNaN(index) || index < 0 || index >= addressList.length) {
-      alert("편집할 주소를 찾을 수 없습니다. 다시 시도해주세요.");
-      return;
-    }
-
     const address = addressList[index];
     nameInput.value = address.name || "";
     phoneNumberInput.value = address.phoneNumber || "";
@@ -410,11 +405,6 @@ userInfo.addEventListener("change", function (e) {
   if (e.target.name === "useraddress__radio") {
     const index = parseInt(e.target.dataset.index, 10);
 
-    if (isNaN(index) || index < 0 || index >= addressList.length) {
-      alert("잘못된 주소를 선택했습니다. 다시 시도해주세요.");
-      return;
-    }
-
     const selectedAddress = addressList[index];
     localStorage.setItem("defaultAddress", JSON.stringify(selectedAddress));
     updateAddressInfoDisplay(); // 기본 주소 화면에 반영
@@ -451,11 +441,6 @@ userInfo.addEventListener("click", function (e) {
       10
     );
 
-    if (isNaN(index) || index < 0 || index >= addressList.length) {
-      alert("삭제할 주소를 찾을 수 없습니다. 다시 시도해주세요.");
-      return;
-    }
-
     addressList.splice(index, 1); // 리스트에서 삭제
     localStorage.setItem("userAddresses", JSON.stringify(addressList));
     loadAddresses(); // UI 갱신
@@ -475,13 +460,6 @@ userInfo.addEventListener("change", function (e) {
     }
 
     const selectedAddress = addressList[index];
-
-    // 선택된 주소 데이터 검증
-    if (!selectedAddress || typeof selectedAddress !== "object") {
-      console.error("선택된 주소 데이터가 유효하지 않습니다:", selectedAddress);
-      alert("주소 데이터가 유효하지 않습니다. 다시 시도해주세요.");
-      return;
-    }
 
     // 기존 기본 주소를 제거
     document
@@ -547,7 +525,7 @@ function updateInfoDown(address) {
   infoDown.innerHTML = infoDownHTML;
 }
 
-// 주소 목록 로드
+// 주소 목록
 function loadAddresses() {
   addressList = JSON.parse(localStorage.getItem("userAddresses")) || [];
   userInfo.innerHTML = ""; // UI 초기화
@@ -687,11 +665,62 @@ function updateFinalPrice() {
 
   // 최종 결제 금액 계산 (소수점 버림)
   const finalPrice = Math.max(totalProductPrice - couponFee - creditFee, 0);
-
   summaryPriceElement.innerText = `￦ ${finalPrice.toLocaleString()}`;
 }
 
-// 쿠폰과 크레딧 이벤트 리스너 설정
+// 공통 크레딧 처리 함수
+function applyCredit(totalProductPrice) {
+  const creditFeeElement = document.querySelector(".credit__fee-last");
+  const creditInput = document.querySelector("#used__credit__box");
+  const creditAmount = 20000; // 크레딧 금액 설정
+
+  if (totalProductPrice < 50000) {
+    // 50,000원 미만일 경우 크레딧 초기화
+    creditInput.value = "₩ 0";
+    creditFeeElement.innerText = "₩ 0";
+    alert("결제 금액이 50,000원 미만인 경우 크레딧을 사용할 수 없습니다.");
+    return 0;
+  } else {
+    // 크레딧 적용
+    const formattedCredit = `- ₩ ${creditAmount.toLocaleString()}`;
+    creditInput.value = formattedCredit;
+    creditFeeElement.innerText = formattedCredit;
+    return creditAmount;
+  }
+}
+
+// 크레딧 설정
+function setupCreditListener() {
+  const creditInput = document.querySelector("#used__credit__box");
+  const fullCreditButton = document.querySelector(".used__credit button");
+
+  // 크레딧 초기값 설정
+  creditInput.readOnly = true;
+  creditInput.value = "₩ 0";
+  document.querySelector(".credit__fee-last").innerText = "₩ 0";
+
+  // 버튼 클릭 이벤트
+  fullCreditButton.addEventListener("click", function (event) {
+    event.preventDefault();
+
+    const totalFeePriceText =
+      document.querySelector(".total__fee .price").innerText;
+    const totalProductPrice =
+      parseInt(totalFeePriceText.replace(/[^0-9]/g, ""), 10) || 0;
+
+    const finalPrice = getFinalPrice();
+
+    // 최종 결제 금액 업데이트
+    updateFinalPrice(finalPrice - creditApplied);
+  });
+
+  // 포커스 아웃 이벤트 (빈 값 방지)
+  creditInput.addEventListener("focusout", function () {
+    creditInput.value = creditInput.value || "₩ 0";
+  });
+}
+
+// 쿠폰과 크레딧
 function setupDiscountListeners() {
   const couponSelect = document.querySelector("#coupon");
   const creditButton = document.querySelector(".used__credit button");
@@ -707,7 +736,6 @@ function setupDiscountListeners() {
     );
 
     const discountAmount = Math.floor(totalProductPrice * discountRate); // 소수점 버림
-
     document.querySelector(
       ".coupon__fee-last"
     ).innerText = `- ￦ ${discountAmount.toLocaleString()}`;
@@ -721,26 +749,22 @@ function setupDiscountListeners() {
 
     const totalFeePriceText =
       document.querySelector(".total__fee .price").innerText;
-    const totalProductPrice = parseInt(
-      totalFeePriceText.replace(/[^0-9]/g, ""),
-      10
-    );
+    const totalProductPrice =
+      parseInt(totalFeePriceText.replace(/[^0-9]/g, ""), 10) || 0;
 
-    // 결제 금액이 50,000원 미만인 경우 크레딧 사용 제한
-    if (totalProductPrice < 50000) {
-      alert("결제 금액이 50,000원 미만인 경우 크레딧을 사용할 수 없습니다.");
-      document.querySelector(".credit__fee-last").innerText = "₩ 0"; // 크레딧 초기화
-      return;
-    }
-
-    // 크레딧 할인 금액 표시
-    const creditAmount = 20000; // 적용할 크레딧 금액
-    document.querySelector(
-      ".credit__fee-last"
-    ).innerText = `- ￦ ${creditAmount.toLocaleString()}`;
+    applyCredit(totalProductPrice); // 공통 함수 호출
 
     updateFinalPrice(); // 최종 결제 금액 업데이트
   });
+}
+
+// 결제 금액 확인 함수
+function getFinalPrice() {
+  const finalPriceElement = document.querySelector(".final__price span");
+  const finalPrice = finalPriceElement
+    ? Number(finalPriceElement.innerText.replace(/[₩,]/g, ""))
+    : 0;
+  return finalPrice;
 }
 
 // 쿠폰 초기화 및 옵션 추가
@@ -787,57 +811,6 @@ function setupCouponOptions() {
   });
 
   document.querySelector(".coupon__fee-last").innerText = "₩ 0";
-}
-
-// 크레딧
-function setupCreditListener() {
-  const creditInput = document.querySelector("#used__credit__box");
-  const creditFeeElement = document.querySelector(".credit__fee-last");
-
-  // 크레딧 초기값 설정
-  creditInput.readOnly = true;
-  creditInput.value = "₩ 0";
-  creditFeeElement.innerText = "₩ 0";
-
-  const fullCreditButton = document.querySelector(".used__credit button");
-
-  // 결제 금액 확인 함수
-  const getFinalPrice = () => {
-    const finalPriceElement = document.querySelector(".final__price span");
-    const finalPrice = finalPriceElement
-      ? Number(finalPriceElement.innerText.replace(/[₩,]/g, ""))
-      : 0;
-    return finalPrice;
-  };
-
-  // 버튼 클릭 이벤트
-  fullCreditButton.addEventListener("click", function (event) {
-    event.preventDefault();
-
-    const finalPrice = getFinalPrice();
-
-    // 결제 금액 50,000원 미만일 때 처리
-    if (finalPrice > 50000) {
-      alert("결제 금액이 50,000원 미만인 경우 크레딧을 사용할 수 없습니다.");
-      creditInput.value = "₩ 0";
-      creditFeeElement.innerText = "₩ 0";
-      return;
-    }
-
-    // 크레딧 적용
-    const creditAmount = 20000; // 적용할 크레딧 금액
-    const formattedCredit = `- ₩ ${creditAmount.toLocaleString()}`;
-    creditInput.value = formattedCredit;
-    creditFeeElement.innerText = formattedCredit;
-
-    // 최종 결제 금액 업데이트
-    updateFinalPrice(finalPrice - creditAmount);
-  });
-
-  // 포커스 아웃 이벤트 (빈 값 방지)
-  creditInput.addEventListener("focusout", function () {
-    creditInput.value = creditInput.value || "₩ 0";
-  });
 }
 
 // 모달 이벤트
@@ -955,39 +928,35 @@ consentBtns.forEach((consentBtn) => {
   });
 });
 
-// 체크박스 동의 및 결제 버튼 활성화
 function setupCheckboxListeners() {
   const agreeAll = document.querySelector("#agreeAll");
   const checkboxes = document.querySelectorAll(
     '.consent__list input[type="checkbox"]:not(#agreeAll)'
-  ); // #agreeAll 제외
+  );
   const radioButtons = document.querySelectorAll('input[name="radio"]');
   const checkoutButton = document.querySelector(".checkout__button");
 
-  // 체크박스 및 라디오 버튼 상태에 따라 결제 버튼 활성화
   function toggleCheckoutButton() {
     const allCheckboxChecked = Array.from(checkboxes).every(
       (checkbox) => checkbox.checked
     );
+
     const radioChecked = Array.from(radioButtons).some(
       (radio) => radio.checked
     );
     const defaultAddressExists =
       localStorage.getItem("defaultAddress") !== null;
 
-    // 모든 조건 충족 시 버튼 활성화
     checkoutButton.disabled = !(
-      allCheckboxChecked &&
-      radioChecked &&
+      allCheckboxChecked ||
+      radioChecked ||
       defaultAddressExists
     );
   }
 
-  // 전체 동의 버튼 이벤트
   agreeAll.addEventListener("change", function () {
     const isChecked = agreeAll.checked;
 
-    // 모든 체크박스 상태 업데이트
     checkboxes.forEach(function (checkbox) {
       checkbox.checked = isChecked;
     });
@@ -995,10 +964,8 @@ function setupCheckboxListeners() {
     toggleCheckoutButton();
   });
 
-  // 개별 체크박스 변경 이벤트
   checkboxes.forEach(function (checkbox) {
     checkbox.addEventListener("change", function () {
-      // 모든 체크박스가 체크되었는지 확인하여 agreeAll 상태 업데이트
       const allChecked = Array.from(checkboxes).every(
         (checkbox) => checkbox.checked
       );
@@ -1008,12 +975,10 @@ function setupCheckboxListeners() {
     });
   });
 
-  // 라디오 버튼 변경 이벤트
   radioButtons.forEach(function (radio) {
     radio.addEventListener("change", toggleCheckoutButton);
   });
 
-  // 결제 버튼 클릭 이벤트
   checkoutButton.addEventListener("click", function () {
     const allCheckboxChecked = Array.from(checkboxes).every(
       (checkbox) => checkbox.checked
@@ -1024,32 +989,28 @@ function setupCheckboxListeners() {
     const defaultAddressExists =
       localStorage.getItem("defaultAddress") !== null;
 
-    // 3가지 조건을 모두 만족하지 않을 경우 경고창(alert) 표시
     if (!allCheckboxChecked || !radioChecked || !defaultAddressExists) {
       let errorMessage = "다음 조건을 확인하세요:\n";
 
       if (!allCheckboxChecked) {
-        errorMessage += "- 모든 필수 체크박스를 선택해야 합니다.\n";
+        errorMessage += "- 전체동의를 눌러주세요.\n";
       }
       if (!radioChecked) {
-        errorMessage += "- 하나 이상의 라디오 버튼을 선택해야 합니다.\n";
+        errorMessage += "- 결제 수단을 체크해주세요.\n";
       }
       if (!defaultAddressExists) {
-        errorMessage += "- 기본 주소를 설정해야 합니다.\n";
+        errorMessage += "- 주소를 등록해주세요.\n";
       }
 
       alert(errorMessage);
       return; // 결제 버튼 동작 중단
     }
 
-    // 모든 조건을 만족하면 결제 페이지로 이동
+    // 조건이 모두 충족되었을 경우 결제 페이지로 이동
     if (!checkoutButton.disabled) {
       window.location.href = "/html/components/Ordercompleted.html";
     }
   });
-
-  // 초기 상태 업데이트
-  toggleCheckoutButton();
 }
 
 addModalEventListeners();

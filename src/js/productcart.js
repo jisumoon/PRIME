@@ -205,7 +205,6 @@ function updateAsideValues(
   asideContainers.forEach((container, index) => {
     const isShortage = shortage > 0;
 
-    // HTML 구조 업데이트
     container.innerHTML = `
       <div class="checkout__summary">
         <div class="summary__item">
@@ -272,8 +271,6 @@ function updateAsideValues(
       checkoutButton.addEventListener("click", () => {
         if (shortage <= 0) {
           window.location.href = "/html/components/Payment.html";
-        } else {
-          alert("결제 금액이 부족합니다.");
         }
       });
     }
@@ -623,5 +620,4 @@ function checkIfCartIsEmpty() {
   }
 }
 
-addCheckboxListeners();
 checkIfCartIsEmpty();
