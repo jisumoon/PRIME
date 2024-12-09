@@ -237,11 +237,9 @@ function updateAsideValues(
             </li>
           </ul>
         </div>
-        <button type="submit" class="checkout__button ${
-          isShortage ? "disabled" : "enabled"
-        }" 
+        <button type="submit" class="checkout__button " 
                 id="checkout__button-${index}" 
-                ${isShortage ? "disabled" : ""}>
+               >
           결제하기
         </button>
         <div class="info">
@@ -271,6 +269,8 @@ function updateAsideValues(
       checkoutButton.addEventListener("click", () => {
         if (shortage <= 0) {
           window.location.href = "/html/components/Payment.html";
+        } else {
+          alert("결제금액이 부족합니다");
         }
       });
     }
@@ -420,7 +420,7 @@ function openModal(index) {
     'input[type="button"].close'
   );
 
-  // getCartProducts 배열에서 선택된 제품을 가져옵니다.
+  // getCartProducts 배열에서 선택된 제품
   const product = getCartProducts[index];
 
   // 초기 상태 저장 (취소 시 복원용)

@@ -658,7 +658,7 @@ function updateFinalPrice() {
     parseInt(creditFeeElement.innerText.replace(/[^0-9]/g, ""), 10) || 0;
 
   // 결제 금액이 50,000원 미만인 경우 크레딧 초기화
-  if (totalProductPrice - couponFee < 50000) {
+  if (totalProductPrice < 50000) {
     creditFee = 0;
     creditFeeElement.innerText = "₩ 0";
   }
@@ -720,6 +720,52 @@ function setupCreditListener() {
   });
 }
 
+// 쿠폰 초기화 및 옵션 추가
+function setupCouponOptions() {
+  const couponSelect = document.querySelector("#coupon");
+
+  // 기존 쿠폰 옵션 제거
+  couponSelect.innerHTML = "";
+
+  // 기본 옵션 추가
+  const defaultOption = document.createElement("option");
+  defaultOption.innerText = "쿠폰을 선택하세요";
+  defaultOption.disabled = true;
+  defaultOption.selected = true;
+  couponSelect.appendChild(defaultOption);
+
+  // 새로운 쿠폰 목록과 최소 사용 금액
+  const coupons = [
+    { name: "5% 할인 쿠폰 - 첫 구매 감사", discount: 0.05, minAmount: 30000 },
+    { name: "7% 할인 쿠폰 - VIP 전용", discount: 0.07, minAmount: 50000 },
+    { name: "10% 할인 쿠폰 - 특별 혜택", discount: 0.1, minAmount: 100000 },
+  ];
+
+  const totalProductPriceText =
+    document.querySelector(".total__fee .price").innerText;
+  const totalProductPrice = parseInt(
+    totalProductPriceText.replace(/[^0-9]/g, ""),
+    10
+  );
+
+  coupons.forEach((coupon) => {
+    const option = document.createElement("option");
+    option.value = coupon.discount;
+    option.innerText = coupon.name;
+
+    if (totalProductPrice >= coupon.minAmount) {
+      option.disabled = false;
+    } else {
+      option.disabled = true;
+      option.innerText += ` (₩${coupon.minAmount.toLocaleString()} 이상 구매 시 사용 가능)`;
+    }
+
+    couponSelect.appendChild(option);
+  });
+
+  document.querySelector(".coupon__fee-last").innerText = "₩ 0";
+}
+
 // 쿠폰과 크레딧
 function setupDiscountListeners() {
   const couponSelect = document.querySelector("#coupon");
@@ -765,52 +811,6 @@ function getFinalPrice() {
     ? Number(finalPriceElement.innerText.replace(/[₩,]/g, ""))
     : 0;
   return finalPrice;
-}
-
-// 쿠폰 초기화 및 옵션 추가
-function setupCouponOptions() {
-  const couponSelect = document.querySelector("#coupon");
-
-  // 기존 쿠폰 옵션 제거
-  couponSelect.innerHTML = "";
-
-  // 기본 옵션 추가
-  const defaultOption = document.createElement("option");
-  defaultOption.innerText = "쿠폰을 선택하세요";
-  defaultOption.disabled = true;
-  defaultOption.selected = true;
-  couponSelect.appendChild(defaultOption);
-
-  // 새로운 쿠폰 목록과 최소 사용 금액
-  const coupons = [
-    { name: "5% 할인 쿠폰 - 첫 구매 감사", discount: 0.05, minAmount: 30000 },
-    { name: "7% 할인 쿠폰 - VIP 전용", discount: 0.07, minAmount: 50000 },
-    { name: "10% 할인 쿠폰 - 특별 혜택", discount: 0.1, minAmount: 100000 },
-  ];
-
-  const totalProductPriceText =
-    document.querySelector(".total__fee .price").innerText;
-  const totalProductPrice = parseInt(
-    totalProductPriceText.replace(/[^0-9]/g, ""),
-    10
-  );
-
-  coupons.forEach((coupon) => {
-    const option = document.createElement("option");
-    option.value = coupon.discount;
-    option.innerText = coupon.name;
-
-    if (totalProductPrice >= coupon.minAmount) {
-      option.disabled = false;
-    } else {
-      option.disabled = true;
-      option.innerText += ` (₩${coupon.minAmount.toLocaleString()} 이상 구매 시 사용 가능)`;
-    }
-
-    couponSelect.appendChild(option);
-  });
-
-  document.querySelector(".coupon__fee-last").innerText = "₩ 0";
 }
 
 // 모달 이벤트
@@ -886,7 +886,7 @@ function onlyKorean(e) {
   }
 }
 
-// 첫 글자가 'P'로 시작하도록 강제
+// 첫 글자가 'P'로 시작하도록
 function validateFirstCharacter(e) {
   const value = e.target.value;
 
@@ -928,6 +928,7 @@ consentBtns.forEach((consentBtn) => {
   });
 });
 
+// 3가지 동의
 function setupCheckboxListeners() {
   const agreeAll = document.querySelector("#agreeAll");
   const checkboxes = document.querySelectorAll(
